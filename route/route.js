@@ -6,7 +6,7 @@ const {
   editContact,
   editOneContact,
   deleteContact,
-} = require("./routeControl");
+} = require("../routeControl/routeControl");
 
 router.post("/phonebook", addContact);
 router.get("/phonebook", getallContact);

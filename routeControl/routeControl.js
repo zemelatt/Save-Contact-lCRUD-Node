@@ -1,16 +1,16 @@
 const { db, query } = require("../database/db");
 const { schema } = require("../validatior/validating");
+const { returnCapital } = require("../method/toCapital");
+const { validErr } = require("../validatior/errValidator");
 
-module.exports.addContact = async (req, res) => {
+const addContact = async (req, res) => {
   try {
     const { value, error } = schema.validate(req.body);
-    if (error) {
+    if (validErr(error)) {
       return res.send(error.details[0].message);
     }
     const { number, name } = value;
-
-    const firstLetter = name.charAt(0).toUpperCase() + name.slice(1);
-
+    const firstLetter = await returnCapital(name);
     await query(
       `INSERT INTO phonebook (pid,ContactName,ContactNumber ) VALUES(null,?,?)`,
       [firstLetter, number],
@@ -24,7 +24,7 @@ module.exports.addContact = async (req, res) => {
   }
 };
 
-module.exports.getallContact = async (req, res) => {
+const getallContact = async (req, res) => {
   try {
     const contact = `SELECT * FROM phonebook`;
     await query(contact, (err, result) => {
@@ -36,7 +36,7 @@ module.exports.getallContact = async (req, res) => {
   }
 };
 
-module.exports.editContact = async (req, res) => {
+const editContact = async (req, res) => {
   try {
     await query(
       `SELECT * FROM phonebook WHERE pid=?`,
@@ -50,18 +50,17 @@ module.exports.editContact = async (req, res) => {
     res.status(404).send("not found");
   }
 };
-
-module.exports.editOneContact = async (req, res) => {
+const editOneContact = async (req, res) => {
   try {
     const { value, error } = schema.validate(req.body);
-    if (error) {
+    if (validErr(error)) {
       return res.send(error.details[0].message);
     }
-    const firstLetter =
-      value.name.charAt(0).toUpperCase() + value.name.slice(1);
+    const { number, name, pid } = value;
+    const firstLetter = await returnCapital(name);
     await query(
       `UPDATE phonebook SET ContactName =?,ContactNumber=? WHERE pid=?`,
-      [firstLetter, value.number, value.pid],
+      [firstLetter, number, pid],
       (err, result) => {
         if (err) throw Error(err);
         res.status(201).send("OK");
@@ -72,10 +71,21 @@ module.exports.editOneContact = async (req, res) => {
   }
 };
 
-module.exports.deleteContact = async (req, res) => {
+const deleteContact = async (req, res) => {
   try {
-    await query(`DELETE FROM phonebook WHERE pid=?`, [req.params.pid]);
+    const responce = await query(`DELETE FROM phonebook WHERE pid=?`, [
+      req.params.pid,
+    ]);
+    if (responce) res.status(201).send("Deleted");
   } catch (error) {
     res.status(404).send("not found");
   }
+};
+
+module.exports = {
+  deleteContact,
+  editOneContact,
+  editContact,
+  getallContact,
+  addContact,
 };
