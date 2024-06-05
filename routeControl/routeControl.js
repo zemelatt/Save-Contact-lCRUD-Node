@@ -1,7 +1,8 @@
 const { db, query } = require("../database/db");
-const { schema } = require("../validatior/validating");
+const { schema } = require("../method/validatior/validating");
 const { returnCapital } = require("../method/toCapital");
-const { validErr } = require("../validatior/errValidator");
+const { validErr } = require("../method/validatior/errValidator");
+// const { validErr } = require("../validatior/errValidator");
 
 const addContact = async (req, res) => {
   try {
