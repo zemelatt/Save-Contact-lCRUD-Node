@@ -1,9 +1,8 @@
-const { db, query } = require("../database/db");
-const { schema } = require("../method/validatior/validating");
-const { returnCapital } = require("../method/toCapital");
-const { validErr } = require("../method/validatior/errValidator");
-// const { validErr } = require("../validatior/errValidator");
-
+const sequelize = require("../database/db");
+const { schema } = require("../utilits/validatior/validating");
+const { returnCapital } = require("../utilits/toCapital");
+const { validErr } = require("../utilits/validatior/errValidator");
+const phonebook = require("../database/model/allContact");
 const addContact = async (req, res) => {
   try {
     const { value, error } = schema.validate(req.body);
@@ -12,14 +11,16 @@ const addContact = async (req, res) => {
     }
     const { number, name } = value;
     const firstLetter = await returnCapital(name);
-    await query(
-      `INSERT INTO phonebook (pid,ContactName,ContactNumber ) VALUES(null,?,?)`,
-      [firstLetter, number],
-      (err, result) => {
-        if (err) throw Error(err);
-        res.status(201).send("new contact created");
-      }
-    );
+    await sequelize.sync();
+    const output = phonebook.create({
+      ContactName: firstLetter,
+      ContactNumber: number,
+    });
+    if (output) {
+      res.status(201).send("new contact created");
+      return;
+    }
+    console.error("Unable to create table : ", error);
   } catch (error) {
     res.status(404).send("not found");
   }
@@ -27,28 +28,34 @@ const addContact = async (req, res) => {
 
 const getallContact = async (req, res) => {
   try {
-    const contact = `SELECT * FROM phonebook`;
-    await query(contact, (err, result) => {
-      if (err) throw Error(err);
-      res.status(200).send(result);
-    });
-  } catch (err) {
-    res.status(404).send("not found");
+    await sequelize.sync();
+    const result = await phonebook.findAll();
+    res.status(200).send(result);
+  } catch (error) {
+    if (error.name === "SequelizeConnectionError") {
+      res.status(500).send("Internal server error");
+    } else {
+      res.status(500).send("Failed to retrieve data");
+    }
   }
 };
 
 const editContact = async (req, res) => {
+  console.log(req.params.pid);
   try {
-    await query(
-      `SELECT * FROM phonebook WHERE pid=?`,
-      [req.params.pid],
-      (err, result) => {
-        if (err) throw Error(err);
-        res.send(result);
-      }
-    );
+    await sequelize.sync();
+    const result = await phonebook.findOne({
+      where: {
+        id: req.params.pid,
+      },
+    });
+    res.send(result);
   } catch (error) {
-    res.status(404).send("not found");
+    if (error.name === "SequelizeConnectionError") {
+      res.status(500).send("Internal server error");
+    } else {
+      res.status(500).send("Failed to retrieve data");
+    }
   }
 };
 const editOneContact = async (req, res) => {
@@ -58,28 +65,50 @@ const editOneContact = async (req, res) => {
       return res.send(error.details[0].message);
     }
     const { number, name, pid } = value;
+
     const firstLetter = await returnCapital(name);
-    await query(
-      `UPDATE phonebook SET ContactName =?,ContactNumber=? WHERE pid=?`,
-      [firstLetter, number, pid],
-      (err, result) => {
-        if (err) throw Error(err);
-        res.status(201).send("OK");
-      }
-    );
+
+    await sequelize.sync();
+    const output = await phonebook.findOne({
+      where: {
+        id: pid,
+      },
+    });
+    if (output) {
+      output.update({
+        ContactName: firstLetter,
+        ContactNumber: number,
+      });
+      res.status(201).send("OK");
+      return;
+    }
+    res.status(404).send("Entry not found");
   } catch (error) {
-    res.status(404).send(error);
+    if (error.name === "SequelizeConnectionError") {
+      res.status(500).send("Internal server error");
+    } else {
+      res.status(500).send("Failed to retrieve data");
+    }
   }
 };
 
 const deleteContact = async (req, res) => {
+  const { pid } = req.params;
   try {
-    const responce = await query(`DELETE FROM phonebook WHERE pid=?`, [
-      req.params.pid,
-    ]);
-    if (responce) res.status(201).send("Deleted");
+    await sequelize.sync();
+
+    await phonebook.destroy({
+      where: {
+        id: pid,
+      },
+    });
+    res.status(201).send("Deleted");
   } catch (error) {
-    res.status(404).send("not found");
+    if (error.name == "SequelizeDatabaseError") {
+      console.error("Unable to create table:", error);
+    } else {
+      console.error("Failed to delete record:", error);
+    }
   }
 };
 

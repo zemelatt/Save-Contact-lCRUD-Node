@@ -1,19 +1,21 @@
 version: "3.7"
+
 services:
   mysql:
     image: mysql
     container_name: mysql
-    restart: always                       # always restart
+    restart: always
     environment:
-      MYSQL_DATABASE: 'test'              # name of database
-      MYSQL_USER: 'sample'                # sample is the name of user
-      MYSQL_PASSWORD: 'password'          # password for sample user
-      MYSQL_ROOT_PASSWORD: 'password'     # password for root user
+      MYSQL_DATABASE: 'phonebook'
+      MYSQL_USER: 'sample'
+      MYSQL_PASSWORD: 'password'
+      MYSQL_ROOT_PASSWORD: 'password'
     ports:
-      - '3306:3306'                       # host port 3306 is mapper to docker port 3306
+      - '3306:3306'
     expose:
       - '3306'
     volumes:
       - mysql-db:/var/lib/mysql
+
 volumes:
-        mysql-db:
+  mysql-db:
