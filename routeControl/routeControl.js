@@ -3,6 +3,7 @@ const { schema } = require("../utilits/validatior/validating");
 const { returnCapital } = require("../utilits/toCapital");
 const { validErr } = require("../utilits/validatior/errValidator");
 const phonebook = require("../database/model/allContact");
+
 const addContact = async (req, res) => {
   try {
     const { value, error } = schema.validate(req.body);
@@ -58,6 +59,7 @@ const editContact = async (req, res) => {
     }
   }
 };
+
 const editOneContact = async (req, res) => {
   try {
     const { value, error } = schema.validate(req.body);
@@ -65,9 +67,7 @@ const editOneContact = async (req, res) => {
       return res.send(error.details[0].message);
     }
     const { number, name, pid } = value;
-
     const firstLetter = await returnCapital(name);
-
     await sequelize.sync();
     const output = await phonebook.findOne({
       where: {
@@ -96,7 +96,6 @@ const deleteContact = async (req, res) => {
   const { pid } = req.params;
   try {
     await sequelize.sync();
-
     await phonebook.destroy({
       where: {
         id: pid,
