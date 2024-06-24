@@ -18,12 +18,12 @@ const addContact = async (req, res) => {
       ContactNumber: number,
     });
     if (output) {
-      res.status(201).send("new contact created");
+      res.status(201).send({ msg: "new contact created" });
       return;
     }
     console.error("Unable to create table : ", error);
   } catch (error) {
-    res.status(404).send("not found");
+    res.status(404).send({ errMsg: "not found" });
   }
 };
 
